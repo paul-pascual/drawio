@@ -1,6 +1,6 @@
 /**
- * Copyright (c) 2006-2020, JGraph Ltd
- * Copyright (c) 2006-2020, draw.io AG
+ * Copyright (c) 2006-2024, JGraph Ltd
+ * Copyright (c) 2006-2024, draw.io AG
  */
 
 //Add a closure to hide the class private variables without changing the code a lot
@@ -68,7 +68,7 @@ mxUtils.extend(DriveClient, mxEventSource);
 // Extends DrawioClient
 mxUtils.extend(DriveClient, DrawioClient);
 
-DriveClient.prototype.redirectUri = window.location.protocol + '//' + window.location.host + '/google';
+DriveClient.prototype.redirectUri = window.DRAWIO_SERVER_URL + 'google';
 DriveClient.prototype.GDriveBaseUrl = 'https://www.googleapis.com/drive/v2';
 
 /**
@@ -848,30 +848,40 @@ DriveClient.prototype.updateUser = function(success, error)
 		
 		this.ui.editor.loadUrl(url, mxUtils.bind(this, function(data)
 		{
-	    	var info = JSON.parse(data);
-	    	
-	    	// Requests more information about the user (email address is sometimes not in info)
-	    	this.executeRequest({url: '/about'}, mxUtils.bind(this, function(resp)
-	    	{
-	    		var email = mxResources.get('notAvailable');
-	    		var name = email;
-	    		var pic = null;
-	    		
-	    		if (resp != null && resp.user != null)
-	    		{
-	    			email = resp.user.emailAddress;
-	    			name = resp.user.displayName;
-	    			pic = (resp.user.picture != null) ? resp.user.picture.url : null;
-	    		}
-	    		
-	    		this.setUser(new DrawioUser(info.id, email, name, pic, info.locale));
-	    		this.userId = info.id;
-	
-	    		if (success != null)
+			try
+			{
+				var info = JSON.parse(data);
+				
+				// Requests more information about the user (email address is sometimes not in info)
+				this.executeRequest({url: '/about'}, mxUtils.bind(this, function(resp)
 				{
-					success();
+					var email = mxResources.get('notAvailable');
+					var name = email;
+					var pic = null;
+					
+					if (resp != null && resp.user != null)
+					{
+						email = resp.user.emailAddress;
+						name = resp.user.displayName;
+						pic = (resp.user.picture != null) ? resp.user.picture.url : null;
+					}
+					
+					this.setUser(new DrawioUser(info.id, email, name, pic, info.locale));
+					this.userId = info.id;
+		
+					if (success != null)
+					{
+						success();
+					}
+				}), error);
+			}
+			catch (e)
+			{
+				if (error != null)
+				{
+					error(e);
 				}
-	    	}), error);
+			}
 		}), error, null, null, null, null, headers);
 	}
 	catch (e)
@@ -1320,34 +1330,34 @@ DriveClient.prototype.saveFile = function(file, revision, success, errFn, noChec
 			}
 			
 			// Logs failed save
-			try
-			{
-				if (!file.isConflict(e))
-				{
-					var err = 'sl_' + file.saveLevel + '-error_' +
-						(file.getErrorMessage(e) || 'unknown');
+			// try
+			// {
+			// 	if (!file.isConflict(e))
+			// 	{
+			// 		var err = 'sl_' + file.saveLevel + '-error_' +
+			// 			(file.getErrorMessage(e) || 'unknown');
 	
-					if (e != null && e.error != null && e.error.code != null)
-					{
-						err += '-code_' + e.error.code;
-					}
+			// 		if (e != null && e.error != null && e.error.code != null)
+			// 		{
+			// 			err += '-code_' + e.error.code;
+			// 		}
 					
-					EditorUi.logEvent({category: 'ERROR-SAVE-FILE-' + file.getHash() + '-rev_' +
-						file.desc.headRevisionId + '-mod_' + file.desc.modifiedDate +
-							'-size_' + file.getSize() + '-mime_' + file.desc.mimeType +
-						((this.ui.editor.autosave) ? '' : '-nosave') +
-						((file.isAutosave()) ? '' : '-noauto') +
-						((file.changeListenerEnabled) ? '' : '-nolisten') +
-						((file.inConflictState) ? '-conflict' : '') +
-						((file.invalidChecksum) ? '-invalid' : ''),
-						action: err, label: ((this.user != null) ? ('user_' + this.user.id) : 'nouser') +
-						((file.sync != null) ? ('-client_' + file.sync.clientId) : '-nosync')});
-				}
-			}
-			catch (ex)
-			{
-				// ignore
-			}
+			// 		EditorUi.logEvent({category: 'ERROR-SAVE-FILE-' + file.getHash() + '-rev_' +
+			// 			file.desc.headRevisionId + '-mod_' + file.desc.modifiedDate +
+			// 				'-size_' + file.getSize() + '-mime_' + file.desc.mimeType +
+			// 			((this.ui.editor.autosave) ? '' : '-nosave') +
+			// 			((file.isAutosave()) ? '' : '-noauto') +
+			// 			((file.changeListenerEnabled) ? '' : '-nolisten') +
+			// 			((file.inConflictState) ? '-conflict' : '') +
+			// 			((file.invalidChecksum) ? '-invalid' : ''),
+			// 			action: err, label: ((this.user != null) ? ('user_' + this.user.id) : 'nouser') +
+			// 			((file.sync != null) ? ('-client_' + file.sync.clientId) : '-nosync')});
+			// 	}
+			// }
+			// catch (ex)
+			// {
+			// 	// ignore
+			// }
 		});
 		
 		var criticalError = mxUtils.bind(this, function(e)
@@ -1664,8 +1674,9 @@ DriveClient.prototype.saveFile = function(file, revision, success, errFn, noChec
 													// Logs failed save
 													try
 													{
-														EditorUi.logError('Critical: Saving to Google Drive failed ' + file.desc.id,
-															null, 'from-' + head0 + '.' + mod0 + '-' + this.ui.hashValue(etag0) +
+														EditorUi.logError('Saving to Google Drive failed',
+															null, 'id-' + file.desc.id +
+															'-from-' + head0 + '.' + mod0 + '-' + this.ui.hashValue(etag0) +
 															'-to-' + resp.headRevisionId + '.' + resp.modifiedDate + '-' +
 															this.ui.hashValue(resp.etag) + ((temp.length > 0) ? '-errors-' + temp : ''),
 															'user-' + ((this.user != null) ? this.user.id : 'nouser') +
@@ -2565,15 +2576,16 @@ DriveClient.prototype.pickLibrary = function(fn)
  * @param {number} dx X-coordinate of the translation.
  * @param {number} dy Y-coordinate of the translation.
  */
-DriveClient.prototype.showPermissions = function(id)
+DriveClient.prototype.showPermissions = function(id, file)
 {
 	var fallback = mxUtils.bind(this, function()
 	{
 		var dlg = new ConfirmDialog(this.ui, mxResources.get('googleSharingNotAvailable'), mxUtils.bind(this, function()
 		{
-			this.ui.editor.graph.openLink('https://drive.google.com/open?id=' + id);
+			var url = (file != null) ? file.getFolderUrl() : 'https://drive.google.com/open?id=' + id;
+			this.ui.editor.graph.openLink(url);
 		}), null, mxResources.get('open'), null, null, null, null, IMAGE_PATH + '/google-share.png');
-		this.ui.showDialog(dlg.container, 360, 190, true, true);
+		this.ui.showDialog(dlg.container, 400, 150, true, true);
 		dlg.init();
 	});
 	

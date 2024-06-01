@@ -6,7 +6,7 @@
  * is used for development mode where the JS is in separate
  * files and the mxClient.js loads other files.
  */
-if (!mxIsElectron && location.protocol !== 'http:')
+if (!mxIsElectron)
 {
 	(function()
 	{
@@ -14,9 +14,20 @@ if (!mxIsElectron && location.protocol !== 'http:')
 			'script-src %script-src% \'self\' https://viewer.diagrams.net https://apis.google.com https://*.pusher.com ' +
 			// Below are the SHAs of the two script blocks in index.html.
 			// These must be updated here and in the CDN after changes.
+			// Note: Desktop app uses only the newest hashes (replace it in electron.js [The one in index.html needs to be changed only if the second script block changes])
 			//----------------------------------------------------------//
 			//------------- Bootstrap script in index.html -------------//
 			//----------------------------------------------------------//
+			// Version 24.4.4
+			'\'sha256-f6cHSTUnCvbQqwa6rKcbWIpgN9dLl0ROfpEKTQUQPr8=\' ' +
+			// Version 24.3.2
+			'\'sha256-qgjuMiWd1HsOihB9Ppd7j72lY0gT8BpBkiRIJFO3sRQ=\' ' +
+			// Version 24.2.6
+			'\'sha256-CuxCZzdV/xHExthsNvH0rD+sU8zQAaYT5XLu6LHfH78=\' ' +
+			// Version 21.7.0
+			'\'sha256-dLMFD7ijAw6AVaqecS7kbPcFFzkxQ+yeZSsKpOdLxps=\' ' +
+			// Version 21.6.7
+			'\'sha256-PDJOTCOfwIg8Ri7U2PH1pIpx+haCyKsJEbFxlW6hdSI=\' ' +
 			// Version 21.5.0
 			'\'sha256-6zAB96lsBZREqf0sT44BhH1T69sm7HrN34rpMOcWbNo=\' ' +
 			// Version 21.4.1
@@ -25,12 +36,6 @@ if (!mxIsElectron && location.protocol !== 'http:')
 			'\'sha256-vrEVJkYyBW9H4tt1lYZtK5fDowIeRwUgYZfFTT36YpE=\' ' +
 			// Version 20.8.12
 			'\'sha256-6g514VrT/cZFZltSaKxIVNFF46+MFaTSDTPB8WfYK+c=\' ' +
-			// Version 16.4.4
-			'\'sha256-AVuOIxynOo/05KDLjyp0AoBE+Gt/KE1/vh2pS+yfqes=\' ' +
-			// Version 15.8.3
-			'\'sha256-r/ILW7KMSJxeo9EYqCTzZyCT0PZ9gHN1BLgki7vpR+A=\' ' +
-			// Version 14.6.5
-			'\'sha256-5DtSB5mj34lxcEf+HFWbBLEF49xxJaKnWGDWa/utwQA=\' ' +
 			//---------------------------------------------------------//
 			//------------- App.main script in index.html -------------//
 			//---------------------------------------------------------//
@@ -53,15 +58,15 @@ if (!mxIsElectron && location.protocol !== 'http:')
 		var directives = 'connect-src %connect-src% \'self\' https://*.draw.io https://*.diagrams.net ' +
 			'https://*.googleapis.com wss://app.diagrams.net wss://*.pusher.com https://*.pusher.com ' +
 			'https://api.github.com https://raw.githubusercontent.com https://gitlab.com ' +
-			'https://graph.microsoft.com https://*.sharepoint.com  https://*.1drv.com https://api.onedrive.com ' +
+			'https://graph.microsoft.com https://my.microsoftpersonalcontent.com https://*.sharepoint.com  https://*.1drv.com https://api.onedrive.com ' +
 			'https://dl.dropboxusercontent.com https://api.openai.com ' +
 			'https://*.google.com https://fonts.gstatic.com https://fonts.googleapis.com; ' +
 			// font-src about: is required for MathJax HTML-CSS output with STIX
-			'img-src * data: blob:; media-src * data:; font-src * about:; ' +
+			'img-src * data: blob:; media-src * data:; font-src * data: about:; ' +
 			// www.draw.io required for browser data migration to app.diagrams.net and
 			// viewer.diagrams.net required for iframe embed preview
 			'frame-src %frame-src% \'self\' https://viewer.diagrams.net https://www.draw.io https://*.google.com; ' +
-			'style-src %style-src% \'self\'  https://fonts.googleapis.com ' +
+			'style-src %style-src% \'self\' https://fonts.googleapis.com ' +
 			// Replaces unsafe-inline style-src with hashes with safe-style-src URL parameter
 			((urlParams['safe-style-src'] == '1') ? styleHashes : '\'unsafe-inline\'; ') +
 			'base-uri \'none\';' +
@@ -71,11 +76,11 @@ if (!mxIsElectron && location.protocol !== 'http:')
 		var csp = hashes + directives;
 		var devCsp = csp.
 			// Adds script tags and loads shapes with eval
-			replace(/%script-src%/g, 'https://www.dropbox.com https://api.trello.com https://devhost.jgraph.com \'unsafe-eval\'').
+			replace(/%script-src%/g, 'https://www.dropbox.com https://api.trello.com \'unsafe-eval\'').
 			// Adds Trello and Dropbox backend storage
-			replace(/%connect-src%/g, 'https://*.dropboxapi.com https://trello.com https://api.trello.com').
+			replace(/%connect-src%/g, 'https://*.dropboxapi.com https://trello.com https://api.trello.com https://my.microsoftpersonalcontent.com').
 			// Loads common.css from mxgraph
-			replace(/%style-src%/g, 'https://devhost.jgraph.com').
+			replace(/%style-src%/g, '').
 			replace(/%frame-src%/g, '').
 			replace(/  /g, ' ');
 
@@ -88,14 +93,14 @@ if (!mxIsElectron && location.protocol !== 'http:')
 				replace(/%connect-src%/g, 'https://*.dropboxapi.com https://api.trello.com').
 				replace(/%frame-src%/g, '').
 					replace(/%style-src%/g, '').
-					replace(/  /g, ' ') + ' frame-ancestors \'self\' https://teams.microsoft.com;';
+					replace(/  /g, ' ') + ' frame-ancestors \'self\' https://teams.microsoft.com https://*.cloud.microsoft;';
 			console.log('app.diagrams.net:', app_diagrams_net);
 
 			var viewer_diagrams_net = hashes.replace(/%script-src%/g, 'https://www.dropbox.com https://api.trello.com https://app.diagrams.net') +
 				'connect-src *; ' +
 				'img-src * data: blob:; ' +
 				'media-src * data:; ' +
-				'font-src * about:; ' +
+				'font-src * data: about:; ' +
 				'style-src \'self\' https://fonts.googleapis.com \'unsafe-inline\'; ' +
 				'base-uri \'none\';' +
 				'object-src \'none\';' +
@@ -107,7 +112,7 @@ if (!mxIsElectron && location.protocol !== 'http:')
 
 			var ac_draw_io = csp.replace(/%script-src%/g, 'https://aui-cdn.atlassian.com https://connect-cdn.atl-paas.net').
 					replace(/%frame-src%/g, 'https://www.lucidchart.com https://app.lucidchart.com https://lucid.app blob:').
-					replace(/%style-src%/g, 'https://aui-cdn.atlassian.com https://*.atlassian.net').
+					replace(/%style-src%/g, 'https://aui-cdn.atlassian.com https://*.atlassian.net https://connect-cdn.atl-paas.net').
 					replace(/%connect-src%/g, '').
 					replace(/  /g, ' ') +
 					'worker-src https://ac.draw.io/service-worker.js;';
@@ -115,7 +120,7 @@ if (!mxIsElectron && location.protocol !== 'http:')
 
 			var aj_draw_io = csp.replace(/%script-src%/g, 'https://aui-cdn.atlassian.com https://connect-cdn.atl-paas.net').
 					replace(/%frame-src%/g, 'blob:').
-					replace(/%style-src%/g, 'https://aui-cdn.atlassian.com https://*.atlassian.net').
+					replace(/%style-src%/g, 'https://aui-cdn.atlassian.com https://*.atlassian.net https://connect-cdn.atl-paas.net').
 					replace(/%connect-src%/g, 'https://api.atlassian.com https://api.media.atlassian.com').
 					replace(/  /g, ' ') +
 					'worker-src https://aj.draw.io/service-worker.js;';
@@ -201,6 +206,7 @@ mxscript(drawDevUrl + 'js/diagramly/sidebar/Sidebar-Network.js');
 mxscript(drawDevUrl + 'js/diagramly/sidebar/Sidebar-Office.js');
 mxscript(drawDevUrl + 'js/diagramly/sidebar/Sidebar-PID.js');
 mxscript(drawDevUrl + 'js/diagramly/sidebar/Sidebar-Rack.js');
+mxscript(drawDevUrl + 'js/diagramly/sidebar/Sidebar-Salesforce.js');
 mxscript(drawDevUrl + 'js/diagramly/sidebar/Sidebar-Signs.js');
 mxscript(drawDevUrl + 'js/diagramly/sidebar/Sidebar-Sitemap.js');
 mxscript(drawDevUrl + 'js/diagramly/sidebar/Sidebar-Sysml.js');
@@ -227,7 +233,7 @@ mxscript(drawDevUrl + 'js/diagramly/Editor.js');
 mxscript(drawDevUrl + 'js/diagramly/EditorUi.js');
 mxscript(drawDevUrl + 'js/diagramly/DiffSync.js');
 mxscript(drawDevUrl + 'js/diagramly/Settings.js');
-mxscript(drawDevUrl + 'js/diagramly/DrawioFilePuller.js');
+mxscript(drawDevUrl + 'js/diagramly/DrawioFilePolling.js');
 mxscript(drawDevUrl + 'js/diagramly/DrawioFileSync.js');
 
 //Comments
@@ -269,6 +275,12 @@ mxscript(drawDevUrl + 'js/diagramly/mxFreehand.js');
 mxscript(drawDevUrl + 'js/diagramly/P2PCollab.js');
 mxscript(drawDevUrl + 'js/diagramly/DevTools.js');
 
+if (!window.DRAWIO_PUBLIC_BUILD)
+{
+	mxscript(drawDevUrl + 'js/diagramly/Simple.js');
+	mxscript(drawDevUrl + 'js/mermaid/mermaid2drawio.js');	
+}
+
 // Vsdx/vssx support
 mxscript(drawDevUrl + 'js/diagramly/vsdx/VsdxExport.js');
 mxscript(drawDevUrl + 'js/diagramly/vsdx/mxVsdxCanvas2D.js');
@@ -290,6 +302,3 @@ if (urlParams['orgChartDev'] == '1')
 
 // Miro Import
 mxscript(drawDevUrl + 'js/diagramly/miro/MiroImporter.js');
-
-// Mermaid to draw.io converter
-mxscript(drawDevUrl + 'js/mermaid/mermaid2drawio.js');
